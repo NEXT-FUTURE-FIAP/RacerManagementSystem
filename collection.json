@@ -7,8 +7,125 @@
 	},
 	"item": [
 		{
-			"name": "Get Points",
+			"name": "Racers",
 			"item": [
+				{
+					"name": "Single Racer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/racer?name=",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"racer"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "All Racers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/racers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"racers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Teams",
+			"item": [
+				{
+					"name": "Single Team Racers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/team?team=",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"team"
+							],
+							"query": [
+								{
+									"key": "team",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "All Teams Racers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/teams",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"teams"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Points",
+			"item": [
+				{
+					"name": "Top Racer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/top",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"top"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "Team",
 					"request": {
@@ -70,85 +187,71 @@
 			]
 		},
 		{
-			"name": "Conn Instagram",
-			"event": [
+			"name": "Instagram",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"\r",
-							"pm.test(\"Response status code is 200\", function () {\r",
-							"    pm.response.to.have.status(200);\r",
-							"});\r",
-							"\r",
-							"\r",
-							"pm.test(\"Response time is less than 200ms\", function () {\r",
-							"  pm.expect(pm.response.responseTime).to.be.below(200);\r",
-							"});\r",
-							"\r",
-							"\r",
-							"pm.test(\"Validate the format of Ratings array - Source and Value\", function () {\r",
-							"    const responseData = pm.response.json();\r",
-							"    \r",
-							"    pm.expect(responseData.Ratings).to.be.an('array');\r",
-							"    responseData.Ratings.forEach(function(rating) {\r",
-							"        pm.expect(rating).to.be.an('object');\r",
-							"        pm.expect(rating.Source).to.be.a('string');\r",
-							"        pm.expect(rating.Value).to.be.a('string');\r",
-							"    });\r",
-							"});\r",
-							"\r",
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"username\":\"nxtftres\",\r\n    \"password\":\"lanaesteveaqui\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Connect",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"\r",
+									"pm.test(\"Response status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"\r",
+									"pm.test(\"Response time is less than 200ms\", function () {\r",
+									"  pm.expect(pm.response.responseTime).to.be.below(200);\r",
+									"});\r",
+									"\r",
+									"\r",
+									"pm.test(\"Validate the format of Ratings array - Source and Value\", function () {\r",
+									"    const responseData = pm.response.json();\r",
+									"    \r",
+									"    pm.expect(responseData.Ratings).to.be.an('array');\r",
+									"    responseData.Ratings.forEach(function(rating) {\r",
+									"        pm.expect(rating).to.be.an('object');\r",
+									"        pm.expect(rating.Source).to.be.a('string');\r",
+									"        pm.expect(rating.Value).to.be.a('string');\r",
+									"    });\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:5000/connect",
-					"protocol": "http",
-					"host": [
-						"localhost"
 					],
-					"port": "5000",
-					"path": [
-						"connect"
-					]
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\":\"nxtftres\",\r\n    \"password\":\"lanaesteveaqui\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5000/connect",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"connect"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "Top Racer",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:5000/top",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "5000",
-					"path": [
-						"top"
-					]
-				}
-			},
-			"response": []
+			]
 		}
 	]
 }
