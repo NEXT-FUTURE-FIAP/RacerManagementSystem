@@ -349,4 +349,5 @@ if __name__ == "__main__":
 
     # Iniciar a interface DearPyGui
     create_window()
+
 # Iniciar a interface do DearPyGui
