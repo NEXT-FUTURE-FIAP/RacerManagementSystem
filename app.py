@@ -287,6 +287,7 @@ def teams_ind(sender, data):
     except Exception as e:
         print(f"Error sending data: {e}")
 
+
 def racer_all(sender, data):
     try:
         response = requests.get("http://127.0.0.1:5000/racers")
@@ -300,6 +301,7 @@ def racer_all(sender, data):
     except Exception as e:
         print(f"Error sending data: {e}")
 
+
 def racer_ind(sender, data):
     try:
         response = requests.get("http://127.0.0.1:5000/racer?name=norman-nato")
@@ -312,42 +314,82 @@ def racer_ind(sender, data):
             print("Failed to send data.")
     except Exception as e:
         print(f"Error sending data: {e}")
+
+
 def start_flask(sender, data):
     flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True  # Permite que o Flask pare junto com o programa principal
+    flask_thread.daemon = True  
     flask_thread.start()
 
 def prnt():
     print(all_teams())
-# Função para criar a janela no DearPyGui
+
+
+
 def create_window():
     dpg.create_context()
 
-    with dpg.window(label="Main Window", width=600, height=300):
-        dpg.add_button(label="top", callback=top)
-        dpg.add_button(label="name", callback=name)
-        dpg.add_button(label="team_ponto", callback=teams_pont)
-        dpg.add_button(label="teams", callback=teams_all)
-        dpg.add_button(label="team", callback=teams_ind)
-        dpg.add_button(label="Corredores", callback=racer_all)
-        dpg.add_button(label="Corredor", callback=racer_ind)
-        dpg.add_button(label="print", callback=prnt)
-        # dpg.add_button(label="Send Data to Flask", callback=top)
+    
+    with dpg.theme() as global_theme:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_Button, [255, 20, 147], category=dpg.mvThemeCat_Core)  
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [255, 105, 180], category=dpg.mvThemeCat_Core)  
+            dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 255, 255], category=dpg.mvThemeCat_Core)  
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, [0, 0, 0], category=dpg.mvThemeCat_Core)  
 
-    dpg.create_viewport(title='DearPyGui & Flask Communication', width=600, height=300)
+    
+    with dpg.window(label="Painel de Controle", width=600, height=500):
+        
+        
+        dpg.add_text("Painel de Informações da corrida", color=[255, 20, 147], bullet=True, indent=100)
+        dpg.add_separator()  
+        dpg.add_spacer(height=10)  
+
+        
+        dpg.add_text("Escolha uma ação abaixo:", color=[255, 255, 255], indent=120)
+
+        dpg.add_spacer(height=15) 
+
+        
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Top Racer", callback=top, width=150, height=50)
+            dpg.add_button(label="Buscar por Nome", callback=name, width=150, height=50)
+
+        dpg.add_spacer(height=10)  
+
+        
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Pontos por Equipe", callback=teams_pont, width=150, height=50)
+            dpg.add_button(label="Todas as Equipes", callback=teams_all, width=150, height=50)
+            dpg.add_button(label="Racers por Equipe", callback=teams_ind, width=150, height=50)
+
+        dpg.add_spacer(height=10)  
+
+        
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Todos os Corredores", callback=racer_all, width=150, height=50)
+            dpg.add_button(label="Exibir Times", callback=prnt, width=150, height=50)
+
+    
+    dpg.bind_theme(global_theme)
+
+    
+    dpg.create_viewport(title='DearPyGui & Flask Communication', width=600, height=500, resizable=False)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()
     dpg.destroy_context()
 
 
+
+
+
 if __name__ == "__main__":
-    # Iniciar o servidor Flask em uma thread separada
+    
     flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True  # Garantir que o Flask pare quando o programa fechar
+    flask_thread.daemon = True  
     flask_thread.start()
 
-    # Iniciar a interface DearPyGui
+    
     create_window()
 
-# Iniciar a interface do DearPyGui
