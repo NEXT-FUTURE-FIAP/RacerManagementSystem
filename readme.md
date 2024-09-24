@@ -60,8 +60,26 @@ A API está disponível nos seguintes endpoints:
 - **GET /points?field=<campo>&var=<valor>**: Retorna a soma de pontos de um corredor ou equipe específica.
 - **POST /connect**: Conecta a uma conta do Instagram.
 
-## Contribuições
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests.
-
-## Licença
-Este projeto está licenciado sob a MIT License. Veja o arquivo LICENSE para mais detalhes.
+## Colaboradores do Projeto
+<div style="display: flex; justify-content: space-between; align-items: center;">
+<a href="https://github.com/AnaTorresLoureiro" target="_blank" style="text-align: center; margin-right: 10px;">
+<img loading="lazy" src="https://avatars.githubusercontent.com/AnaTorresLoureiro" width=120>
+<p style="font-size:min(2vh, 36px); margin-top: 10px;">Ana Laura Torres Loureiro - RM 554375</p>
+</a>
+<a href="https://github.com/MuriloCngp" target="_blank" style="text-align: center; margin-right: 10px;">
+<img loading="lazy" src="https://avatars.githubusercontent.com/MuriloCngp" width=120>
+<p style="font-size:min(2vh, 36px); margin-top: 10px;">Murilo Cordeiro Ferreira - RM 556727</p>
+</a>
+<a href="https://github.com/MateusLem" target="_blank" style="text-align: center; margin-right: 10px;">
+<img loading="lazy" src="https://avatars.githubusercontent.com/MateusLem" width=120>
+<p style="font-size:min(2vh, 36px); margin-top: 10px;">Mateus da Costa Leme - RM 557803</p>
+</a>
+<a href="https://github.com/Geronimo-augusto" target="_blank" style="text-align: center; margin-right: 10px;">
+<img loading="lazy" src="https://avatars.githubusercontent.com/Geronimo-augusto" width=120>
+<p style="font-size:min(2vh, 36px); margin-top: 10px;">	Geronimo Augusto Nascimento Santos - RM 557170</p>
+</a>
+<a href="https://github.com/Vitorr-AF" target="_blank" style="text-align: center; margin-right: 10px;">
+<img loading="lazy" src="https://avatars.githubusercontent.com/Vitorr-AF" width=120>
+<p style="font-size:min(2vh, 36px); margin-top: 10px;">Vitor Augusto França de Oliveira - RM 555469</p>
+</a>
+</div>
