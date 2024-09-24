@@ -1,5 +1,3 @@
-Aqui está um modelo de README para o seu projeto baseado no código que você forneceu:
-
 # Racer Management System
 
 ## Descrição
