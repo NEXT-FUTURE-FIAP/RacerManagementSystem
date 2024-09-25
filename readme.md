@@ -25,7 +25,7 @@ Racer Management System
 ## Como Rodar o Projeto
 
 ### Pré-requisitos
-- Python 3.x
+- Python 3.12+
 - Azure CLI (opcional, se for fazer o deploy na Azure)
 - Apache Maven (opcional, se for fazer o deploy na Azure)
 
