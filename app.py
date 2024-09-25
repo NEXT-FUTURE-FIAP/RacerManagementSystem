@@ -6,18 +6,27 @@ import threading
 import requests
 import json
 import random
+import time
 
 ################################ Const ################################
+def filter_value(value):
+    return value.lower().replace(" ", "-")
+
+
 teams = [
     'DS PENSKE', 'Jaguar TCS Racing', 'MAHINDRA RACING', 'Envision Racing',
-    'Nissan Formula E Team', 'Nissan Formula E Team', 'Avalanche Andretti Formula E',
-    'NIO 333 Racing FE Team', 'Envision Racing', 'Maserati MSG Racing', 'NEOM McLaren Formula E Team',
-    'ABT CUPRA FORMULA E TEAM', 'MAHINDRA RACING', 'Jaguar TCS Racing', 'TAG Heuer Porsche Formula E Team'
+    'Nissan Formula E Team', 'Avalanche Andretti Formula E', 'NIO 333 Racing FE Team',
+    'Maserati MSG Racing', 'NEOM McLaren Formula E Team', 'ABT CUPRA FORMULA E TEAM',
+    'TAG Heuer Porsche Formula E Team'
 ]
 
-
-def simul_racers_data(teams):
-    names = [
+racers_data = [
+    {
+        "racer": filter_value(name),
+        "team": filter_value(random.choice(teams)),
+        "points": [random.randint(0, 100) for _ in range(17)]
+    }
+    for name in [
         "Jake Dennis", "Stoffel Vandoorne", "Sergio Camara", "Robin Frijns",
         "Jake Hughes", "Maximilian Gunther", "Sam Bird", "Mitch Evans",
         "Lucas di Grassi", "Antonio Felix da Costa", "Sébastien Buemi",
@@ -25,30 +34,7 @@ def simul_racers_data(teams):
         "Sacha Fenestraz", "Jean-Eric Vergne", "Dan Ticktum", "Nick Cassidy",
         "Edoardo Mortara", "Nico Müller", "Pascal Wehrlein"
     ]
-
-    racers_data = [
-        {
-            "name": name.lower().replace(" ", "-"),
-            "team": random.choice(teams).lower().replace(" ", "-"),
-            "points": [random.randint(0, 100) for _ in range(17)]
-        }
-        for name in names
-    ]
-
-    return racers_data
-
-
-def force_question(field, values):
-    resp = ""
-    while resp not in values:
-        print(f"Invalid {field}")
-        for i in values:
-            print(f"- {i}")
-        resp = input(f"{field}: ")
-    return resp
-
-
-racers_data = simul_racers_data(teams)
+]
 
 app = Flask(__name__)
 
@@ -57,57 +43,84 @@ def run_flask():
     app.run(debug=True, use_reloader=False)
 
 
-################################ Corredores ################################
+################################ Racer Functions ################################
 
-def racer(racer_name):
+def search_name(group_field, value):
+    if not value:
+        raise ValueError(f"{group_field} not informed")
+    racers = []
     for racer in racers_data:
-        if racer["name"] == racer_name.lower().replace(" ", "-"):
-            return racer
+        if filter_value(value) in racer[group_field]:
+            if racer["racer"] == filter_value(value):
+                return racer
+            racers.append(racer)
+
+    return racers
 
 
 def all_racers():
-    return [racer for racer in racers_data]
+    return racers_data
+
+
+def all_teams():
+    return [{team: search_name("team", team)} for team in teams]
+
+
+def total_points(group_type, name):
+    if not name:
+        raise ValueError("Name not informed")
+
+    name = filter_value(name)
+    total = 0
+    for racer in racers_data:
+        if racer[group_type] == name:
+            total += sum(racer["points"])
+
+    return {group_type: name, "total": total}
+
+
+def top(group_type):
+    if group_type == "racer":
+        return top_racer()
+    return top_teams()
 
 
 def top_racer():
     top_racers = []
     max_points = 0
-
     for racer in racers_data:
-
-        total_points = sum(racer["points"])
-        if total_points > max_points:
+        sum_points = sum(racer["points"])
+        if sum_points > max_points:
             top_racers = [racer]
-            max_points = total_points
-
-        elif total_points == max_points:
+            max_points = sum_points
+        elif sum_points == max_points:
             top_racers.append(racer)
-
     return {"racers": top_racers}
 
 
-def total_points(field, var):
-    if field == "" or var == "":
-        raise ValueError("Field or variable not informed")
+def top_teams():
+    try:
+        past_teams = []
+        top_teams = []
+        max_points = 0
 
-    total = 0
-    for racer in racers_data:
-        if racer[field] == var.lower().replace(" ", "-"):
-            total += sum(racer["points"])
+        for racer in racers_data:
+            team = racer["team"]
+            if team not in past_teams:
+                current = total_points("team", team)
 
-    return {
-        field: var.lower().replace(" ", "-"),
-        "total": total
-    }
+                if current["total"] > max_points:
+                    top_teams = [current]
+                    max_points = current["total"]
 
+                elif current["total"] == max_points:
+                    top_teams.append(current)
 
-def team_racers(team):
-    return [racer for racer in racers_data if racer["team"] == team.lower().replace(" ", "-")]
+                past_teams.append(team)
 
-
-def all_teams():
-
-    return [{team: team_racers(team)} for team in teams]
+        return {"teams": top_teams}
+    except Exception as e:
+        print(e)
 
 
 ################################ Instagram ################################
@@ -115,23 +128,20 @@ def all_teams():
 def conn_instagram(data):
     username = data.get('username')
     password = data.get('password')
-
     if not username or not password:
         raise ValueError("Username and password are required")
-
     cl = Client()
     cl.login(username, password)
     return cl
 
 
-################################ API ################################
+################################ API Routes ################################
 
 @app.route('/racer', methods=['GET'])
 def get_racer():
     try:
-        racer_name = request.args.get("name")
-        return jsonify(racer(racer_name)), 200
-
+        name = request.args.get("name")
+        return jsonify(search_name("racer", name)), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -143,9 +153,6 @@ def get_racer():
 def get_all_racers():
     try:
         return jsonify(all_racers()), 200
-
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
     except Exception as e:
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
@@ -154,10 +161,8 @@ def get_all_racers():
 @app.route('/team', methods=['GET'])
 def get_team_racers():
     try:
-        field = request.args.get('team')
-
-        return jsonify(team_racers(field)), 200
-
+        team = request.args.get('name')
+        return jsonify(search_name("team", team)), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -169,6 +174,18 @@ def get_team_racers():
 def get_all_teams_racers():
     try:
         return jsonify(all_teams()), 200
+    except Exception as e:
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route('/top/<group_type>', methods=['GET'])
+def top_info(group_type):
+    try:
+        if group_type not in ['team', 'racer']:
+            raise ValueError("Invalid group type. Use 'team' or 'racer'.")
+
+        return jsonify(top(group_type)), 200
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -177,24 +194,15 @@ def get_all_teams_racers():
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
-@app.route('/top', methods=['GET'])
-def top_racer_info():
+@app.route('/points/<group_type>', methods=['GET'])
+def get_points(group_type):
     try:
-        return jsonify(top_racer()), 200
+        if group_type not in ['team', 'racer']:
+            raise ValueError("Invalid group type. Use 'team' or 'racer'.")
 
-    except Exception as e:
-        app.logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({"error": "An unexpected error occurred"}), 500
+        name = request.args.get('name')
 
-
-@app.route('/points', methods=['GET'])
-def get_total_points():
-    try:
-        field = request.args.get('field')
-        var = request.args.get('var')
-
-        return jsonify(total_points(field, var)), 200
-
+        return jsonify(total_points(group_type, name)), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -207,12 +215,9 @@ def connect_instagram():
     try:
         client = conn_instagram(request.json)
         user_id = client.user_id_from_username(client.username)
-
         if not user_id:
             return jsonify({"error": "Failed to retrieve user ID"}), 400
-
         return jsonify({"coins": 1000}), 200
-
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except LoginRequired:
@@ -221,159 +226,141 @@ def connect_instagram():
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+################################ DearPyGui Interface ################################
 
-def top(sender, data):
+def send_request(url, data=None, method='GET'):
     try:
-
-        response = requests.get("http://127.0.0.1:5000/top")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
+        if method == 'GET':
+            response = requests.get(url, params=data)
         else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
-def name(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/points?field=name&var=norman-nato")
+            response = requests.post(url, json=data)
+
         if response.status_code == 200:
-            print("Data successfully sent to Flask.")
             response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
+            dpg.set_value("response_text", json.dumps(response_obj, indent=2))
         else:
-            print("Failed to send data.")
+            dpg.set_value("response_text", f"Failed to fetch data: {response.status_code}")
     except Exception as e:
-        print(f"Error sending data: {e}")
-def teams_pont(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/points?field=team&var=avalanche-andretti")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
-        else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
-
-def teams_all(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/teams")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
-        else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
-
-def teams_ind(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/team?team=Jaguar TCS Racing")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
-        else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
+        dpg.set_value("response_text", f"Error fetching data: {e}")
 
 
-def racer_all(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/racers")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
-        else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
+def create_input_dialog(title, label, callback, inputs):
+    # Generate a unique identifier for each window based on the current time
+    unique_id = str(time.time()).replace('.', '')
 
+    # Check if the window already exists and delete it before creating a new one
+    if dpg.does_item_exist(title + unique_id):
+        dpg.delete_item(title + unique_id)  # Delete the window and its children
 
-def racer_ind(sender, data):
-    try:
-        response = requests.get("http://127.0.0.1:5000/racer?name=norman-nato")
-        if response.status_code == 200:
-            print("Data successfully sent to Flask.")
-            response_obj = json.loads(response.text)
-            response_str = json.dumps(response_obj, indent=2)
-            print(response_str)  # Mostra os dados retornados pelo Flask
-        else:
-            print("Failed to send data.")
-    except Exception as e:
-        print(f"Error sending data: {e}")
+    with dpg.window(label=title, modal=True, show=True, tag=title + unique_id):  # Use title + unique_id as the unique window tag
+        dpg.add_text(label)
+        data = {}
+        input_tags = {}
 
+        # Create input fields with unique tags
+        for input_name in inputs:
+            tag = f"{input_name}_{unique_id}"  # Make the tag unique
+            input_tags[input_name] = tag
+            dpg.add_input_text(hint=input_name.capitalize(), tag=tag)
 
-def start_flask(sender, data):
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True  
-    flask_thread.start()
+        def submit_callback():
+            for input_name in inputs:
+                tag = input_tags[input_name]
+                data[input_name] = dpg.get_value(tag)  # Get value using the unique tag
 
-def prnt():
-    print(all_teams())
+            dpg.set_value("response_text", "Autenticando Usuário...")
+            callback(data)
 
+        dpg.add_button(label="Submit", callback=submit_callback)
 
 
 def create_window():
     dpg.create_context()
 
-    
     with dpg.theme() as global_theme:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_Button, [255, 20, 147], category=dpg.mvThemeCat_Core)  
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [255, 105, 180], category=dpg.mvThemeCat_Core)  
-            dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 255, 255], category=dpg.mvThemeCat_Core)  
-            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, [0, 0, 0], category=dpg.mvThemeCat_Core)  
+            dpg.add_theme_color(dpg.mvThemeCol_Button, [255, 20, 147])
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, [255, 105, 180])
+            dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 255, 255])
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, [0, 0, 0])
 
-    
     with dpg.window(label="Painel de Controle", width=600, height=500):
-        
-        
         dpg.add_text("Painel de Informações da corrida", color=[255, 20, 147], bullet=True, indent=100)
-        dpg.add_separator()  
-        dpg.add_spacer(height=10)  
-
-        
+        dpg.add_separator()
         dpg.add_text("Escolha uma ação abaixo:", color=[255, 255, 255], indent=120)
 
-        dpg.add_spacer(height=15) 
-
-        
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Top Racer", callback=top, width=150, height=50)
-            dpg.add_button(label="Buscar por Nome", callback=name, width=150, height=50)
+            dpg.add_button(
+                label="Buscar Corredor",
+                callback=lambda: create_input_dialog(
+                    "Buscar Corredor",
+                    "Digite o nome do corredor",
+                    lambda data: send_request("http://127.0.0.1:5000/racer", data),
+                    ['name']),
+                width=150)
 
-        dpg.add_spacer(height=10)  
+            dpg.add_button(
+                label="Todas os Corredores",
+                callback=lambda: send_request("http://127.0.0.1:5000/racers"),
+                width=150)
 
-        
+            dpg.add_button(
+                label="Top Corredores",
+                callback=lambda: send_request("http://127.0.0.1:5000/top/racer"),
+                width=150)
+
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Pontos por Equipe", callback=teams_pont, width=150, height=50)
-            dpg.add_button(label="Todas as Equipes", callback=teams_all, width=150, height=50)
-            dpg.add_button(label="Racers por Equipe", callback=teams_ind, width=150, height=50)
+            dpg.add_button(
+                label="Buscar Equipe",
+                callback=lambda: create_input_dialog(
+                    "Buscar Equipe",
+                    "Digite o nome da Equipe",
+                    lambda data: send_request("http://127.0.0.1:5000/team", data),
+                    ['name']),
+                width=150)
 
-        dpg.add_spacer(height=10)  
+            dpg.add_button(
+                label="Todas as Equipes",
+                callback=lambda: send_request("http://127.0.0.1:5000/teams"),
+                width=150)
 
-        
+            dpg.add_button(
+                label="Top Equipes",
+                callback=lambda: send_request("http://127.0.0.1:5000/top/team"),
+                width=150)
+
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Todos os Corredores", callback=racer_all, width=150, height=50)
-            dpg.add_button(label="Exibir Times", callback=prnt, width=150, height=50)
+            dpg.add_button(
+                label="Pontos de Corredor",
+                callback=lambda: create_input_dialog(
+                    "Pontos de Corredor",
+                    "Digite o nome do corredor",
+                    lambda data: send_request("http://127.0.0.1:5000/points/racer", data),
+                    ['name']),
+                width=150)
 
-    
+            dpg.add_button(
+                label="Pontos de Equipe",
+                callback=lambda: create_input_dialog(
+                    "Pontos de Equipe",
+                    "Digite o nome da equipe",
+                    lambda data: send_request("http://127.0.0.1:5000/points/team", data),
+                    ['name']),
+                width=150)
+
+            dpg.add_button(
+                label="Conectar ao Instagram",
+                callback=lambda: create_input_dialog(
+                    "Conectar Instagram", "Username e Senha",
+                    lambda data: send_request("http://127.0.0.1:5000/connect", data, method='POST'),
+                    ['username', 'password']),
+                width=150)
+
+        dpg.add_separator()
+        dpg.add_text("Response:", color=[255, 255, 255], indent=120)
+        dpg.add_input_text(multiline=True, readonly=True, height=200, width=400, tag="response_text")
+
     dpg.bind_theme(global_theme)
-
-    
     dpg.create_viewport(title='DearPyGui & Flask Communication', width=600, height=500, resizable=False)
     dpg.setup_dearpygui()
     dpg.show_viewport()
@@ -382,14 +369,10 @@ def create_window():
 
 
 
-
+################################ Main ################################
 
 if __name__ == "__main__":
-    
     flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True  
+    flask_thread.daemon = True
     flask_thread.start()
-
-    
     create_window()
-

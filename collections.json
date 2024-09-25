@@ -123,12 +123,12 @@
 			}
 		},
 		{
-			"name": "Get Points by Field",
+			"name": "Get Points by Type and Name",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://127.0.0.1:5000/points?field=&var=",
+					"raw": "http://127.0.0.1:5000/points?type=&name=",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -142,11 +142,11 @@
 					],
 					"query": [
 						{
-							"key": "field",
+							"key": "type",
 							"value": ""
 						},
 						{
-							"key": "var",
+							"key": "name",
 							"value": ""
 						}
 					]
