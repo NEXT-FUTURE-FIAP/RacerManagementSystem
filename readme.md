@@ -3,6 +3,9 @@
 ## Descrição
 O Racer Management System é uma aplicação desenvolvida com Flask, que permite gerenciar dados de corredores de Fórmula E. A aplicação simula dados de corredores, fornece informações sobre times e permite interação com uma interface gráfica utilizando Dear PyGui.
 
+## Apresentação
+[Vídeo de Apresentação](https://youtu.be/Eb3sp5bYB34)
+
 ## Funcionalidades
 - Simulação de dados de corredores com pontuação.
 - API RESTful para acessar informações sobre corredores, equipes e pontuações.
