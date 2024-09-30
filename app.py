@@ -82,18 +82,28 @@ def all_teams():
 
 def total_points_teams(racers):
     data = []
-    current = {"team":racers[0]["team"], "points": sum(racers[0]["points"])}
+
+    if len(racers) == 0:
+        raise ValueError("Nenhum corredor desta equipe encontrado")
+
+    current = {"racer":[racers[0]["racer"]],"team":racers[0]["team"], "points": sum(racers[0]["points"])}
 
     for racer in racers:
-        if current["team"] == racer["team"]:
+        if current["team"] != racer["team"]:
             data.append(current)
-            current = {"team":racers[0]["team"], "points": sum(racers[0]["points"])}
+            current = {"racer":[racer["racer"]],"team":racer["team"], "points": sum(racer["points"])}
         else:
-            current["points"] += sum(racer["points"])
+            if racer["racer"] not in current["racer"]:
+                current["racer"].append(racer["racer"])
+                current["points"] += sum(racer["points"])
+    data.append(current)
 
-    unique_data = [dict(t) for t in {tuple(d.items()) for d in data}]
+    unique_data = [dict(t)
+                   for t in {tuple((k, tuple(v) if isinstance(v, list) else v)
+                                   for k, v in d.items()) for d in data}]
 
     return unique_data
+
 
 def total_points_racer(racers):
     data = []
