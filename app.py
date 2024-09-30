@@ -7,6 +7,8 @@ import requests
 import json
 import random
 import time
+from tabulate import tabulate
+
 
 ################################ Const ################################
 def filter_value(value):
@@ -52,7 +54,7 @@ def search_name(group_field, value):
     for racer in racers_data:
         if filter_value(value) in racer[group_field]:
             if racer["racer"] == filter_value(value):
-                return racer
+                return [racer]
             racers.append(racer)
 
     return racers
@@ -63,65 +65,97 @@ def all_racers():
 
 
 def all_teams():
-    return [{team: search_name("team", team)} for team in teams]
+    teams_data = []
+    for team in teams:
+        team_info = search_name("team", team)  # This should return a list of racers for that team
+        if team_info:
+            teams_data.append({
+                "team": team,
+                "racers": [
+                    {
+                        "racer": racer['racer'],
+                        "points": racer['points']
+                    } for racer in team_info
+                ]
+            })
+    return teams_data
 
+def total_points_teams(racers):
+    data = []
+    current = {"team":racers[0]["team"], "points": sum(racers[0]["points"])}
+
+    for racer in racers:
+        if current["team"] == racer["team"]:
+            data.append(current)
+            current = {"team":racers[0]["team"], "points": sum(racers[0]["points"])}
+        else:
+            current["points"] += sum(racer["points"])
+
+    unique_data = [dict(t) for t in {tuple(d.items()) for d in data}]
+
+    return unique_data
+
+def total_points_racer(racers):
+    data = []
+    for racer in racers:
+        data.append({
+                "racer": racer["racer"],
+                "team": racer["team"],
+                "points": sum(racer['points'])
+            })
+    return data
 
 def total_points(group_type, name):
     if not name:
         raise ValueError("Name not informed")
 
     name = filter_value(name)
-    total = 0
-    for racer in racers_data:
-        if racer[group_type] == name:
-            total += sum(racer["points"])
+    found_names = search_name(group_type, name)
 
-    return {group_type: name, "total": total}
-
-
-def top(group_type):
     if group_type == "racer":
-        return top_racer()
-    return top_teams()
+        return total_points_racer(found_names)
+    return total_points_teams(found_names)
 
 
-def top_racer():
-    top_racers = []
-    max_points = 0
-    for racer in racers_data:
-        sum_points = sum(racer["points"])
-        if sum_points > max_points:
-            top_racers = [racer]
-            max_points = sum_points
-        elif sum_points == max_points:
-            top_racers.append(racer)
-    return {"racers": top_racers}
-
-
-def top_teams():
-    try:
-        past_teams = []
-        top_teams = []
-        max_points = 0
-
-        for racer in racers_data:
-            team = racer["team"]
-            if team not in past_teams:
-                current = total_points("team", team)
-
-                if current["total"] > max_points:
-                    top_teams = [current]
-                    max_points = current["total"]
-
-                elif current["total"] == max_points:
-                    top_teams.append(current)
-
-                past_teams.append(team)
-
-        return {"teams": top_teams}
-    except Exception as e:
-        print(e)
-
+# def top_racer():
+#     top_racers = []
+#     max_points = 0
+#     for racer in racers_data:
+#         sum_points = sum(racer["points"])
+#         if sum_points > max_points:
+#             top_racers = [racer]
+#             max_points = sum_points
+#         elif sum_points == max_points:
+#             top_racers.append(racer)
+#     return {"racers": top_racers}
+#
+# def top_teams():
+#     try:
+#         past_teams = []
+#         top_teams = []
+#         max_points = 0
+#
+#         for racer in racers_data:
+#             team = racer["team"]
+#             if team not in past_teams:
+#                 current = total_points("team", team)
+#
+#                 if current["total"] > max_points:
+#                     top_teams = [current]
+#                     max_points = current["total"]
+#
+#                 elif current["total"] == max_points:
+#                     top_teams.append(current)
+#
+#                 past_teams.append(team)
+#         return {"teams": top_teams}
+#     except Exception as e:
+#         print(e)
+#
+# def top(group_type):
+#     if group_type == "racer":
+#         return top_racer()
+#     return top_teams()
 
 ################################ Instagram ################################
 
@@ -146,7 +180,7 @@ def get_racer():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         app.logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({"error": "An unexpected error occurred"}), 500
+        return jsonify({"error": "An unexpected error occurred"}), 200
 
 
 @app.route('/racers', methods=['GET'])
@@ -179,19 +213,19 @@ def get_all_teams_racers():
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
-@app.route('/top/<group_type>', methods=['GET'])
-def top_info(group_type):
-    try:
-        if group_type not in ['team', 'racer']:
-            raise ValueError("Invalid group type. Use 'team' or 'racer'.")
-
-        return jsonify(top(group_type)), 200
-
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        app.logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({"error": "An unexpected error occurred"}), 500
+# @app.route('/top/<group_type>', methods=['GET'])
+# def top_info(group_type):
+#     try:
+#         if group_type not in ['team', 'racer']:
+#             raise ValueError("Invalid group type. Use 'team' or 'racer'.")
+#
+#         return jsonify(top(group_type)), 200
+#
+#     except ValueError as e:
+#         return jsonify({"error": str(e)}), 400
+#     except Exception as e:
+#         app.logger.error(f"Unexpected error: {str(e)}")
+#         return jsonify({"error": "An unexpected error occurred"}), 500
 
 
 @app.route('/points/<group_type>', methods=['GET'])
@@ -226,6 +260,7 @@ def connect_instagram():
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+
 ################################ DearPyGui Interface ################################
 
 def send_request(url, data=None, method='GET'):
@@ -237,36 +272,73 @@ def send_request(url, data=None, method='GET'):
 
         if response.status_code == 200:
             response_obj = json.loads(response.text)
+
             dpg.set_value("response_text", json.dumps(response_obj, indent=2))
+            json_formatado = ""
+
+            if isinstance(response_obj, list) and all(isinstance(item, dict) for item in response_obj):
+                headers = response_obj[0].keys() if response_obj else []
+
+                if 'racers' in response_obj[0]:
+                    json_formatado = tabulate(
+                        [[team['team'], ', '.join(
+                            [f"{racer['racer']} ({racer['points']})"  # Remove o 'join' se for um único valor
+                             if isinstance(racer['points'], int)
+                             else f"{racer['racer']} ({', '.join(map(str, racer['points']))})"
+                             for racer in team['racers']]) ]
+                         for team in response_obj],
+                        headers=['Team', 'Racers (Points)'],
+                        tablefmt="grid",
+                        maxcolwidths=[10, 30]
+                    )
+                else:
+                    json_formatado = tabulate(
+                        [[item.get('racer', 'N/A'),
+                          str(item['points']) if isinstance(item['points'], int)
+                          else ', '.join(map(str, item.get('points', []))),
+                          item.get('team', 'N/A')] for item in response_obj],
+                        headers=['Racer', 'Points', 'Team'],
+                        tablefmt="grid",
+                        maxcolwidths=[10, 20, 20]
+                    )
+
+            # Verificação se é um dicionário contendo pontos totais
+            elif isinstance(response_obj, dict) and all(isinstance(v, int) for v in response_obj.values()):
+                json_formatado = tabulate(
+                    [[key, value] for key, value in response_obj.items()],
+                    headers=["Racer/Team", "Total Points"],
+                    tablefmt="grid",
+                    maxcolwidths=[None, None]
+                )
+
+            dpg.set_value("response_text", json_formatado)
         else:
             dpg.set_value("response_text", f"Failed to fetch data: {response.status_code}")
     except Exception as e:
         dpg.set_value("response_text", f"Error fetching data: {e}")
 
 
+
+
 def create_input_dialog(title, label, callback, inputs):
-    # Generate a unique identifier for each window based on the current time
     unique_id = str(time.time()).replace('.', '')
 
-    # Check if the window already exists and delete it before creating a new one
     if dpg.does_item_exist(title + unique_id):
-        dpg.delete_item(title + unique_id)  # Delete the window and its children
+        dpg.delete_item(title + unique_id)
 
-    with dpg.window(label=title, modal=True, show=True, tag=title + unique_id):  # Use title + unique_id as the unique window tag
+    with dpg.window(label=title, modal=True, show=True, tag=title + unique_id, width=300, height=200):
         dpg.add_text(label)
         data = {}
         input_tags = {}
-
-        # Create input fields with unique tags
         for input_name in inputs:
-            tag = f"{input_name}_{unique_id}"  # Make the tag unique
+            tag = f"{input_name}_{unique_id}"
             input_tags[input_name] = tag
             dpg.add_input_text(hint=input_name.capitalize(), tag=tag)
 
         def submit_callback():
             for input_name in inputs:
                 tag = input_tags[input_name]
-                data[input_name] = dpg.get_value(tag)  # Get value using the unique tag
+                data[input_name] = dpg.get_value(tag)
 
             dpg.set_value("response_text", "Autenticando Usuário...")
             callback(data)
@@ -284,12 +356,16 @@ def create_window():
             dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 255, 255])
             dpg.add_theme_color(dpg.mvThemeCol_WindowBg, [0, 0, 0])
 
-    with dpg.window(label="Painel de Controle", width=600, height=500):
-        dpg.add_text("Painel de Informações da corrida", color=[255, 20, 147], bullet=True, indent=100)
-        dpg.add_separator()
-        dpg.add_text("Escolha uma ação abaixo:", color=[255, 255, 255], indent=120)
+    with dpg.theme() as text_theme:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_Text, [255, 20, 147])
 
-        with dpg.group(horizontal=True):
+    with dpg.window(label="Painel de Controle", width=600, height=500):
+        text1 = dpg.add_text("Painel de Informações da corrida", bullet=True, indent=150)
+        dpg.add_separator()
+        text2 = dpg.add_text("Escolha uma ação abaixo:", indent=200)
+
+        with dpg.group(horizontal=True, indent=50):
             dpg.add_button(
                 label="Buscar Corredor",
                 callback=lambda: create_input_dialog(
@@ -297,19 +373,19 @@ def create_window():
                     "Digite o nome do corredor",
                     lambda data: send_request("http://127.0.0.1:5000/racer", data),
                     ['name']),
-                width=150)
+                width=155)
 
             dpg.add_button(
                 label="Todas os Corredores",
                 callback=lambda: send_request("http://127.0.0.1:5000/racers"),
-                width=150)
+                width=155)
 
-            dpg.add_button(
-                label="Top Corredores",
-                callback=lambda: send_request("http://127.0.0.1:5000/top/racer"),
-                width=150)
+            # dpg.add_button(
+            #     label="Top Corredores",
+            #     callback=lambda: send_request("http://127.0.0.1:5000/top/racer"),
+            #     width=155)
 
-        with dpg.group(horizontal=True):
+        with dpg.group(horizontal=True, indent=50):
             dpg.add_button(
                 label="Buscar Equipe",
                 callback=lambda: create_input_dialog(
@@ -317,19 +393,27 @@ def create_window():
                     "Digite o nome da Equipe",
                     lambda data: send_request("http://127.0.0.1:5000/team", data),
                     ['name']),
-                width=150)
+                width=155)
 
             dpg.add_button(
                 label="Todas as Equipes",
                 callback=lambda: send_request("http://127.0.0.1:5000/teams"),
-                width=150)
+                width=155)
 
             dpg.add_button(
-                label="Top Equipes",
-                callback=lambda: send_request("http://127.0.0.1:5000/top/team"),
-                width=150)
+                label="Conectar ao Instagram",
+                callback=lambda: create_input_dialog(
+                    "Conectar Instagram", "Username e Senha",
+                    lambda data: send_request("http://127.0.0.1:5000/connect", data, method='POST'),
+                    ['username', 'password']),
+                width=155)
 
-        with dpg.group(horizontal=True):
+            # dpg.add_button(
+            #     label="Top Equipes",
+            #     callback=lambda: send_request("http://127.0.0.1:5000/top/team"),
+            #     width=155)
+
+        with dpg.group(horizontal=True, indent=50):
             dpg.add_button(
                 label="Pontos de Corredor",
                 callback=lambda: create_input_dialog(
@@ -337,7 +421,7 @@ def create_window():
                     "Digite o nome do corredor",
                     lambda data: send_request("http://127.0.0.1:5000/points/racer", data),
                     ['name']),
-                width=150)
+                width=155)
 
             dpg.add_button(
                 label="Pontos de Equipe",
@@ -346,27 +430,26 @@ def create_window():
                     "Digite o nome da equipe",
                     lambda data: send_request("http://127.0.0.1:5000/points/team", data),
                     ['name']),
-                width=150)
+                width=155)
 
-            dpg.add_button(
-                label="Conectar ao Instagram",
-                callback=lambda: create_input_dialog(
-                    "Conectar Instagram", "Username e Senha",
-                    lambda data: send_request("http://127.0.0.1:5000/connect", data, method='POST'),
-                    ['username', 'password']),
-                width=150)
+
 
         dpg.add_separator()
-        dpg.add_text("Response:", color=[255, 255, 255], indent=120)
-        dpg.add_input_text(multiline=True, readonly=True, height=200, width=400, tag="response_text")
+        text3 = dpg.add_text("Response", indent=250, tag="response")
+        dpg.add_input_text(multiline=True, readonly=True, height=200, width=450, tag="response_text")
+        dpg.set_item_theme("response_text", [255, 0, 0, 255])
+        dpg.set_item_pos("response_text", (75, 200))
+        dpg.set_item_pos("response", (250, 165))
 
+    dpg.bind_item_theme(text1, text_theme)
+    dpg.bind_item_theme(text2, text_theme)
+    dpg.bind_item_theme(text3, text_theme)
     dpg.bind_theme(global_theme)
     dpg.create_viewport(title='DearPyGui & Flask Communication', width=600, height=500, resizable=False)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()
     dpg.destroy_context()
-
 
 
 ################################ Main ################################
